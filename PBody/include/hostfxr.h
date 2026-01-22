@@ -1,117 +1,11 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-#ifndef HAVE_NETHOST_H
-#define HAVE_NETHOST_H
-
-#include <stddef.h>
-
-#ifdef _WIN32
-    #ifdef NETHOST_EXPORT
-        #define NETHOST_API __declspec(dllexport)
-    #else
-        // Consuming the nethost as a static library
-        // Shouldn't export attempt to dllimport.
-        #ifdef NETHOST_USE_AS_STATIC
-            #define NETHOST_API
-        #else
-            #define NETHOST_API __declspec(dllimport)
-        #endif
-    #endif
-
-    #define NETHOST_CALLTYPE __stdcall
-    #ifdef _WCHAR_T_DEFINED
-        typedef wchar_t char_t;
-    #else
-        typedef unsigned short char_t;
-    #endif
-#else
-    #ifdef NETHOST_EXPORT
-        #define NETHOST_API __attribute__((__visibility__("default")))
-    #else
-        #define NETHOST_API
-    #endif
-
-    #define NETHOST_CALLTYPE
-    typedef char char_t;
-#endif
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-// Parameters for get_hostfxr_path
-//
-// Fields:
-//   size
-//     Size of the struct. This is used for versioning.
-//
-//   assembly_path
-//     Path to the component's assembly.
-//     If specified, hostfxr is located as if the assembly_path is the apphost
-//
-//   dotnet_root
-//     Path to directory containing the dotnet executable.
-//     If specified, hostfxr is located as if an application is started using
-//     'dotnet app.dll', which means it will be searched for under the dotnet_root
-//     path and the assembly_path is ignored.
-//
-struct get_hostfxr_parameters {
-    size_t size;
-    const char_t *assembly_path;
-    const char_t *dotnet_root;
-};
-
-//
-// Get the path to the hostfxr library
-//
-// Parameters:
-//   buffer
-//     Buffer that will be populated with the hostfxr path, including a null terminator.
-//
-//   buffer_size
-//     [in] Size of buffer in char_t units.
-//     [out] Size of buffer used in char_t units. If the input value is too small
-//           or buffer is nullptr, this is populated with the minimum required size
-//           in char_t units for a buffer to hold the hostfxr path
-//
-//   get_hostfxr_parameters
-//     Optional. Parameters that modify the behaviour for locating the hostfxr library.
-//     If nullptr, hostfxr is located using the environment variable or global registration
-//
-// Return value:
-//   0 on success, otherwise failure
-//   0x80008098 - buffer is too small (HostApiBufferTooSmall)
-//
-// Remarks:
-//   The full search for the hostfxr library is done on every call. To minimize the need
-//   to call this function multiple times, pass a large buffer (e.g. PATH_MAX).
-//
-NETHOST_API int NETHOST_CALLTYPE get_hostfxr_path(
-    char_t * buffer,
-    size_t * buffer_size,
-    const struct get_hostfxr_parameters *parameters);
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-#endif // HAVE_NETHOST_H
-
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
-#ifndef HAVE_HOSTFXR_H
-#define HAVE_HOSTFXR_H
+#ifndef __HOSTFXR_H__
+#define __HOSTFXR_H__
 
 #include <stddef.h>
 #include <stdint.h>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif // __cplusplus
 
 #if defined(_WIN32)
     #define HOSTFXR_CALLTYPE __cdecl
@@ -236,7 +130,7 @@ typedef int32_t(HOSTFXR_CALLTYPE *hostfxr_initialize_for_dotnet_command_line_fn)
 //    Success                            - Hosting components were successfully initialized
 //    Success_HostAlreadyInitialized     - Config is compatible with already initialized hosting components
 //    Success_DifferentRuntimeProperties - Config has runtime properties that differ from already initialized hosting components
-//    HostIncompatibleConfig             - Config is incompatible with already initialized hosting components
+//    CoreHostIncompatibleConfig         - Config is incompatible with already initialized hosting components
 //
 // This function will process the .runtimeconfig.json to resolve frameworks and prepare everything needed
 // to load the runtime. It will only process the .deps.json from frameworks (not any app/component that
@@ -402,6 +296,10 @@ struct hostfxr_dotnet_environment_sdk_info
     const char_t* path;
 };
 
+typedef void(HOSTFXR_CALLTYPE* hostfxr_get_dotnet_environment_info_result_fn)(
+    const struct hostfxr_dotnet_environment_info* info,
+    void* result_context);
+
 struct hostfxr_dotnet_environment_framework_info
 {
     size_t size;
@@ -423,10 +321,6 @@ struct hostfxr_dotnet_environment_info
     size_t framework_count;
     const struct hostfxr_dotnet_environment_framework_info* frameworks;
 };
-
-typedef void(HOSTFXR_CALLTYPE* hostfxr_get_dotnet_environment_info_result_fn)(
-    const struct hostfxr_dotnet_environment_info* info,
-    void* result_context);
 
 //
 // Returns available SDKs and frameworks.
@@ -490,7 +384,7 @@ struct hostfxr_resolve_frameworks_result
 };
 
 typedef void (HOSTFXR_CALLTYPE* hostfxr_resolve_frameworks_result_fn)(
-    const struct hostfxr_resolve_frameworks_result* result,
+    const hostfxr_resolve_frameworks_result* result,
     void* result_context);
 
 //
@@ -517,88 +411,8 @@ typedef void (HOSTFXR_CALLTYPE* hostfxr_resolve_frameworks_result_fn)(
 //
 typedef int32_t(HOSTFXR_CALLTYPE* hostfxr_resolve_frameworks_for_runtime_config_fn)(
     const char_t* runtime_config_path,
-    /*opt*/ const struct hostfxr_initialize_parameters* parameters,
+    /*opt*/ const hostfxr_initialize_parameters* parameters,
     /*opt*/ hostfxr_resolve_frameworks_result_fn callback,
     /*opt*/ void* result_context);
 
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-#endif // HAVE_HOSTFXR_H
-
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
-#ifndef HAVE_CORECLR_DELEGATES_H
-#define HAVE_CORECLR_DELEGATES_H
-
-#include <stddef.h>
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#if defined(_WIN32)
-    #define CORECLR_DELEGATE_CALLTYPE __stdcall
-    #ifdef _WCHAR_T_DEFINED
-        typedef wchar_t char_t;
-    #else
-        typedef unsigned short char_t;
-    #endif
-#else
-    #define CORECLR_DELEGATE_CALLTYPE
-    typedef char char_t;
-#endif
-
-#define UNMANAGEDCALLERSONLY_METHOD ((const char_t*)-1)
-
-// Signature of delegate returned by coreclr_delegate_type::load_assembly_and_get_function_pointer
-typedef int (CORECLR_DELEGATE_CALLTYPE *load_assembly_and_get_function_pointer_fn)(
-    const char_t *assembly_path      /* Fully qualified path to assembly */,
-    const char_t *type_name          /* Assembly qualified type name */,
-    const char_t *method_name        /* Public static method name compatible with delegateType */,
-    const char_t *delegate_type_name /* Assembly qualified delegate type name or null
-                                        or UNMANAGEDCALLERSONLY_METHOD if the method is marked with
-                                        the UnmanagedCallersOnlyAttribute. */,
-    void         *reserved           /* Extensibility parameter (currently unused and must be 0) */,
-    /*out*/ void **delegate          /* Pointer where to store the function pointer result */);
-
-// Signature of delegate returned by load_assembly_and_get_function_pointer_fn when delegate_type_name == null (default)
-typedef int (CORECLR_DELEGATE_CALLTYPE *component_entry_point_fn)(void *arg, int32_t arg_size_in_bytes);
-
-typedef int (CORECLR_DELEGATE_CALLTYPE *get_function_pointer_fn)(
-    const char_t *type_name          /* Assembly qualified type name */,
-    const char_t *method_name        /* Public static method name compatible with delegateType */,
-    const char_t *delegate_type_name /* Assembly qualified delegate type name or null,
-                                        or UNMANAGEDCALLERSONLY_METHOD if the method is marked with
-                                        the UnmanagedCallersOnlyAttribute. */,
-    void         *load_context       /* Extensibility parameter (currently unused and must be 0) */,
-    void         *reserved           /* Extensibility parameter (currently unused and must be 0) */,
-    /*out*/ void **delegate          /* Pointer where to store the function pointer result */);
-
-typedef int (CORECLR_DELEGATE_CALLTYPE *load_assembly_fn)(
-    const char_t *assembly_path     /* Fully qualified path to assembly */,
-    void         *load_context      /* Extensibility parameter (currently unused and must be 0) */,
-    void         *reserved          /* Extensibility parameter (currently unused and must be 0) */);
-
-typedef int (CORECLR_DELEGATE_CALLTYPE *load_assembly_bytes_fn)(
-    const void *assembly_bytes      /* Bytes of the assembly to load */,
-    size_t     assembly_bytes_len   /* Byte length of the assembly to load */,
-    const void *symbols_bytes       /* Optional. Bytes of the symbols for the assembly */,
-    size_t     symbols_bytes_len    /* Optional. Byte length of the symbols for the assembly */,
-    void       *load_context        /* Extensibility parameter (currently unused and must be 0) */,
-    void       *reserved            /* Extensibility parameter (currently unused and must be 0) */);
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-#endif // HAVE_CORECLR_DELEGATES_H
-
-// P-Body Scripting Engine
-// v0.0.1
-
-
+#endif //__HOSTFXR_H__

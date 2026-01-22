@@ -1,0 +1,122 @@
+//-----------------------------------------------------------------------------
+//	PBODY.VPC
+//-----------------------------------------------------------------------------
+
+$Configuration
+{
+	$Compiler
+	{
+		$AdditionalIncludeDirectories		"$BASE,$SRCDIR\pbody\PBody\include,$SRCDIR\pbody\PBody"
+	}
+
+	$Linker
+	{
+		$AdditionalDependencies 			"$BASE;nethost.lib"
+		$AdditionalLibraryDirectories		"$BASE;$SRCDIR\pbody\PBody\lib"
+	}
+
+	$PreBuildEvent [!$ANALYZE]
+	{
+		$CommandLine	"$BASE" \
+						"echo Building PBody.Bridge.csproj (.NET 10)" "\n"
+
+		$CommandLine	"$BASE" \
+						"dotnet build $QUOTE$SRCDIR\\pbody\\PBody.Bridge\\PBody.Bridge.csproj$QUOTE " \
+						"-c $(Configuration) " \
+						"-f net10.0 " \
+						"--no-restore" "\n" \
+						"if ERRORLEVEL 1 goto BuildEventFailed" "\n"
+
+		$CommandLine	"$BASE" \
+						"goto BuildEventOK" "\n" \
+						":BuildEventFailed" "\n" \
+						"echo *** ERROR! Failed to build PBody.Bridge (.NET 10) ***" "\n" \
+						"exit 1" "\n" \
+						":BuildEventOK" "\n"
+
+		$Description		"Building PBody.Bridge (.NET 10)"
+		$ExcludedFromBuild	"No"
+	}
+
+	$PostBuildEvent [!$ANALYZE]
+	{
+		$CommandLine	"$BASE" \
+						"if not exist $QUOTE$OUTBINDIR$QUOTE mkdir $QUOTE$OUTBINDIR$QUOTE" "\n"
+
+		$CommandLine	"$BASE" \
+						"copy $QUOTE$SRCDIR\\pbody\\PBody\\lib\\nethost.dll$QUOTE $QUOTE$OUTBINDIR\\nethost.dll$QUOTE" "\n" \
+						"if ERRORLEVEL 1 goto BuildEventFailed" "\n"
+
+		$CommandLine	"$BASE" \
+						"goto BuildEventOK" "\n" \
+						":BuildEventFailed" "\n" \
+						"echo *** ERROR! Failed to copy nethost.dll ***" "\n" \
+						"exit 1" "\n" \
+						":BuildEventOK" "\n"
+
+		$Description		"Copying nethost.dll to $OUTBINDIR"
+		$ExcludedFromBuild	"No"
+	}
+
+	$PostBuildEvent [!$ANALYZE]
+	{
+		$CommandLine	"$BASE" \
+						"if not exist $QUOTE$OUTBINDIR$QUOTE mkdir $QUOTE$OUTBINDIR$QUOTE" "\n"
+
+		$CommandLine	"$BASE" \
+						"copy $QUOTE$SRCDIR\\pbody\\PBody.Bridge\\bin\\Release\\PBody.Bridge.dll$QUOTE $QUOTE$OUTBINDIR\\PBody.Bridge.dll$QUOTE" "\n" \
+						"if ERRORLEVEL 1 goto BuildEventFailed" "\n"
+
+		$CommandLine	"$BASE" \
+						"goto BuildEventOK" "\n" \
+						":BuildEventFailed" "\n" \
+						"echo *** ERROR! Failed to copy nethost.dll ***" "\n" \
+						"exit 1" "\n" \
+						":BuildEventOK" "\n"
+
+		$Description		"Copying PBody.Bridge.dll to $OUTBINDIR"
+		$ExcludedFromBuild	"No"
+	}
+
+		$PostBuildEvent [!$ANALYZE]
+	{
+		$CommandLine	"$BASE" \
+						"if not exist $QUOTE$OUTBINDIR$QUOTE mkdir $QUOTE$OUTBINDIR$QUOTE" "\n"
+
+		$CommandLine	"$BASE" \
+						"copy $QUOTE$SRCDIR\\pbody\\PBody.Bridge\\bin\\Release\\PBody.Bridge.runtimeconfig.json$QUOTE $QUOTE$OUTBINDIR\\PBody.Bridge.runtimeconfig.json$QUOTE" "\n" \
+						"if ERRORLEVEL 1 goto BuildEventFailed" "\n"
+
+		$CommandLine	"$BASE" \
+						"goto BuildEventOK" "\n" \
+						":BuildEventFailed" "\n" \
+						"echo *** ERROR! Failed to copy nethost.dll ***" "\n" \
+						"exit 1" "\n" \
+						":BuildEventOK" "\n"
+
+		$Description		"Copying PBody.Bridge.runtimeconfig.json to $OUTBINDIR"
+		$ExcludedFromBuild	"No"
+	}
+
+}
+
+$Project "pbody"
+{
+	$Folder	"P-Body"
+	{
+		$File	"$SRCDIR\pbody\PBody\CSharpInterop.h"
+		$File	"$SRCDIR\pbody\PBody\DotNetBackend.cpp"
+		$File	"$SRCDIR\pbody\PBody\DotNetBackend.h"
+		$File	"$SRCDIR\pbody\PBody\ICSharpBackend.h"
+		$File	"$SRCDIR\pbody\PBody\PBody.cpp"
+		$File	"$SRCDIR\pbody\PBody\PBody.h"
+		$File	"$SRCDIR\pbody\PBody\PBodyAPI.h"
+		$File	"$SRCDIR\pbody\PBody\PBodyInstance.cpp"
+		$File	"$SRCDIR\pbody\PBody\PBodyInstance.h"
+	}
+
+	$Folder	"Link Libraries"
+	{
+		$ImpLibexternal $SRCDIR\pbody\PBody\lib\nethost	[$WIN64]
+ 	}
+}
