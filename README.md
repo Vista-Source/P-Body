@@ -1,5 +1,17 @@
-# NetLeaf
-*A Simplified way to run C# from native C++ Apps.*
+# P-Body
+Vista Source's solution for hosting .NET via the Source SDK.
+
+*NOTE: This is a fork of [NetLeaf](https://github.com/Tweety-Lab/NetLeaf) designed for easy integration within the Source SDK*
+
+## Adding to the SDK
+
+### VPC
+1. Navigate to the project .vpc script you want to add P-Body to (i.e., client_hl2mp.vpc)
+2. Add `$Include "$SRCDIR\pbody\pbody.vpc"` to the .vpc header
+3. Run `createallprojects.bat`
+4. Build!
+
+## NetLeaf
 
 NetLeaf allows simple and fast .NET C# Hosting from C++ Code through a handful of easy to understand methods.
 
@@ -17,41 +29,31 @@ NetLeaf allows simple and fast .NET C# Hosting from C++ Code through a handful o
 NetLeaf utilises the .NET Runtime to support .NET 9.0.0 by default.
 
 ## Getting Started
-Once you have NetLeaf installed and `NetLeaf.h` included in your file, you can get started with just a few calls.
+Once you have NetLeaf installed and `PBody.h` included in your file, you can get started with just a few calls.
 
 **Load NetLeaf with a .NET Runtime backend:**
 ```C++
-#include "NetLeaf/DotNetBackend.h"
-NetLeaf::LoadCSharpBackend(new DotNetBackend());
+#include "PBody/DotNetBackend.h"
+PBody::LoadCSharpBackend(new DotNetBackend());
 ```
 
 **Load a C# Assembly:**
 ```C++
-NetLeaf::LoadAssembly("AssemblyName.dll");
+PBody::LoadAssembly("AssemblyName.dll");
 ```
 
 **Run a Static C# Method:**
 ```C++
-NetLeaf::RunCSharpMethod("Namespace.ClassName.MethodName()");
+PBody::RunCSharpMethod("Namespace.ClassName.MethodName()");
 ```
 
 **Create an Instance of a C# Class:**
 ```C++
-NetLeaf::CreateInstance("Namespace.ClassName");
+PBody::CreateInstance("Namespace.ClassName");
 ```
 
 **Create an Instance and run one of it's Methods:**
 ```C++
-NetLeafInstance* instance = NetLeaf::CreateInstance("Namespace.ClassName");
+PBodyInstance* instance = PBody::CreateInstance("Namespace.ClassName");
 instance->RunMethod("MethodName()");
 ```
-
-## Building
-
-### Prerequisites
-Premake5
-
-### Windows
-1. Navigate to the Repo
-2. Open a Command Prompt
-3. Build with the appropriate Premake5 Command (i.e., `premake5 vs2022` for Visual Studio 2022)
